@@ -68,15 +68,15 @@ public class Game
     {
         string[] inputs = Console.ReadLine()!.Split(' ');
         int siteId = int.Parse(inputs[0]);
-        int ignore1 = int.Parse(inputs[1]); // used in future leagues
-        int ignore2 = int.Parse(inputs[2]); // used in future leagues
+        int gold = int.Parse(inputs[1]); // used in future leagues
+        int maxMineSize = int.Parse(inputs[2]); // used in future leagues
         int structureType = int.Parse(inputs[3]); // -1 = No structure, 1 = TOWER, 2 = Barracks
         int owner = int.Parse(inputs[4]); // -1 = No structure, 0 = Friendly, 1 = Enemy
         int param1 = int.Parse(inputs[5]);//When barracks, the number of turns before a new set of creeps can be trained (if 0, then training may be started this turn)
         int param2 = int.Parse(inputs[6]);//When barracks: the creep type: 0 for KNIGHT, 1 for ARCHER
 
-        var site = GetSite(siteId);
-        site.UpdateSite(structureType, owner.MapToOwner(), param1, param2);
+        Site site = GetSite(siteId);
+        site.UpdateSite(gold, maxMineSize, owner.ToOwner(), structureType, param1, param2);
     }
 
     private void AddUnitsToField(int owner, int unitType, int health, int x, int y)
@@ -86,11 +86,11 @@ public class Game
 
         if(unitType == 0)//Knight
         {
-            Field.FriendlyKnights.Add(new Knight(owner.MapToOwner(), x, y, 100));
+            Field.FriendlyKnights.Add(new Knight(owner.ToOwner(), x, y, 100));
         }
         else if(unitType == 1)//Archer
         {
-            Field.FriendlyArchers.Add(new Archer(owner.MapToOwner(), x, y, 100));
+            Field.FriendlyArchers.Add(new Archer(owner.ToOwner(), x, y, 100));
         }
         else if(unitType == -1)//Queen
         {

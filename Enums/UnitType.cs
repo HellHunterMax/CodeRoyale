@@ -1,3 +1,9 @@
+/// <summary>
+/// <see cref="QUEEN">QUEEN</see> = -1,
+/// KNIGHT = 0,
+/// ARCHER = 1,
+/// GIANT = 2
+/// </summary>
 public enum UnitType
 {
     QUEEN = -1,
@@ -8,7 +14,7 @@ public enum UnitType
 
 public static class UnitTypeMapper 
 {
-    public static UnitType MapToUnitType(this int number) => number switch
+    public static UnitType ToUnitType(this int number) => number switch
     {
         -1 => UnitType.QUEEN,
         0 => UnitType.KNIGHT,
@@ -17,7 +23,7 @@ public static class UnitTypeMapper
         _ => throw new ArgumentOutOfRangeException($"Unknown UnitType for number: {number}"),
     };
 
-    public static int MapToInt(this UnitType unitType) => unitType switch
+    public static int ToInt(this UnitType unitType) => unitType switch
     {
         UnitType.QUEEN => -1,
         UnitType.KNIGHT => 0,

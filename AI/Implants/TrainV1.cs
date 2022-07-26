@@ -16,13 +16,13 @@ public class TrainV1 : ITrainImplant
 
         private Site? GetSiteForTraining(Field field, List<Site> sites, Queen queen)
         {
-            List<Site> availableSites = GetAvailableSites(sites);
+            var availableSites = GetAvailableSites(sites);
             if (!availableSites.Any())
             {
                 return null;
             }
-            var canBuildKnight = availableSites.Any(x => x.Barracks!.UnitType == UnitType.KNIGHT);
-            var canBuildArcher = availableSites.Any(x => x.Barracks!.UnitType == UnitType.ARCHER);
+            var canBuildKnight = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
+            var canBuildArcher = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
 
             var AreThereEnoughArchers = GetNumberOfArchers(field) > 1;
             var gold = IsKnightTurn? 80 : 100;
@@ -59,19 +59,28 @@ public class TrainV1 : ITrainImplant
             if (unitType == UnitType.ARCHER)
             {
                 IsKnightTurn = true;
-                site = availableSites.First(x => x.Barracks!.UnitType == UnitType.ARCHER);
+                site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
             }
             else
             {
                 IsKnightTurn = false;
-                site = availableSites.First(x => x.Barracks!.UnitType == UnitType.KNIGHT);
+                site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
             }
-            site.Barracks!.IsTraining = true;
+            GetBarrack(site)!.IsTraining = true;
             queen.Gold -= gold;
             return site;
         }
 
-        private int GetNumberOfArchers(Field field)
+    private Barracks? GetBarrack(Site site)
+    {
+        if (site.Structure.Type != StructureType.BARRACKS)
+        {
+            return null;
+        }
+        return (Barracks)site.Structure;
+    }
+
+    private int GetNumberOfArchers(Field field)
         {
             return field.FriendlyArchers.Count;
         }
@@ -82,9 +91,8 @@ public class TrainV1 : ITrainImplant
 
             foreach (var site in sites)
             {
-                if  (site.Owner != Owner.Friendly || 
-                    site.Barracks == null || 
-                    site.Barracks.IsTraining)
+                if  (site.Owner != Owner.Friendly ||
+                    GetBarrack(site)?.IsTraining != false)
                 {
                     continue;
                 }
