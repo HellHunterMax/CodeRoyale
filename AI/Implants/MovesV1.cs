@@ -9,7 +9,7 @@ public class MovesV1 : IMoveImplant
         if  (closestNonHostileSite == null || (areThereEnoughTowers && areThereAnoughBarracks))
         {
             var site = sites.FirstOrDefault(x=> x.SiteId == queen.TouchedSite);
-            if( site != null && site.StructureType == StructureType.TOWER)
+            if( site != null && site.Structure.Type == StructureType.TOWER)
             {
                 return $"BUILD {queen.TouchedSite} {StructureType.TOWER}";
             }
@@ -35,12 +35,12 @@ public class MovesV1 : IMoveImplant
 
     private int CountTowers(List<Site> sites)
     {
-        return sites.Count(x => x.Owner == Owner.Friendly && x.StructureType == StructureType.TOWER);
+        return sites.Count(x => x.Owner == Owner.Friendly && x.Structure.Type == StructureType.TOWER);
     }
 
     private int CountBarracks(List<Site> sites)
     {
-        return sites.Count(x => x.Owner == Owner.Friendly && x.StructureType == StructureType.BARRACKS);
+        return sites.Count(x => x.Owner == Owner.Friendly && x.Structure.Type == StructureType.BARRACKS);
     }
 
     private UnitType GetBarracksTypeToBuild(List<Site> sites)
@@ -51,23 +51,20 @@ public class MovesV1 : IMoveImplant
 
         foreach (var site in sites)
         {
-            if (site.Owner != Owner.Friendly) //Friendly
+            if (site.Owner != Owner.Friendly || site.Structure.Type != StructureType.BARRACKS) //Friendly
             {
                 continue;
             }
-            if (site.Barracks != null)
+            switch (((Barracks)site.Structure).UnitType)
             {
-                switch (site.Barracks.UnitType)
-                {
-                    case UnitType.ARCHER :
-                    archer++;
-                    break;
-                    case UnitType.KNIGHT :
-                    knight++;
-                    break;
-                    default:
-                    break;
-                }
+                case UnitType.ARCHER :
+                archer++;
+                break;
+                case UnitType.KNIGHT :
+                knight++;
+                break;
+                default:
+                break;
             }
         }
 
@@ -92,8 +89,8 @@ public class MovesV1 : IMoveImplant
 
     private int GetDistance(Queen queen, Site site)
     {
-        var xDistance = Math.Abs(queen.X - site.X) - site.Radius;
-        var yDistance = Math.Abs(queen.Y - site.Y) - site.Radius;
-        return xDistance + yDistance;
+        var xDistance = Math.Abs(queen.X - site.X);
+        var yDistance = Math.Abs(queen.Y - site.Y);
+        return (xDistance + yDistance) - site.Radius;
     }
 }
