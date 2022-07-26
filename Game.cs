@@ -1,12 +1,16 @@
 public class Game
 {
     public Field Field { get; } = new Field();
-    public List<Site> Sites { get; }= new List<Site>();
-    public Queen Queen {get;}= new Queen(Owner.Friendly, 0, 0, 100);
+    public List<Site> Sites { get; } = new List<Site>();
+    public Queen Queen {get;} = new Queen(Owner.Friendly, 0, 0, 100);
+
+    private readonly Ai _ai;
 
     public Game()
     {
-
+        IMoveImplant moveImplant = new MovesV1();
+        ITrainImplant trainImplant = new TrainV1();
+        _ai = new Ai(moveImplant, trainImplant);
     }
 
     public void Run()
@@ -17,16 +21,9 @@ public class Game
         // game loop
         while (true)
         {
-            Ai ai;
-            ReadGameLoop(numSites, out ai);
-
-            // Write an action using Console.WriteLine()
-            // To debug: Console.Error.WriteLine("Debug messages...");
-
-            // First line: A valid queen action
-            // Second line: A set of training instructions
-            Console.WriteLine(ai.GetMoveCommand(Field, Sites, Queen));
-            Console.WriteLine(ai.GetTrainCommand(Field, Sites, Queen));
+            ReadGameLoop(numSites);
+            Console.WriteLine(_ai.GetMoveCommand(Field, Sites, Queen));
+            Console.WriteLine(_ai.GetTrainCommand(Field, Sites, Queen));
             ResetField();
         }
     }
@@ -37,7 +34,7 @@ public class Game
         Field.FriendlyKnights.Clear();
     }
 
-    private void ReadGameLoop(int numSites, out Ai ai)
+    private void ReadGameLoop(int numSites)
     {
         var inputs = Console.ReadLine()!.Split(' ');
         Queen.Gold = int.Parse(inputs[0]);
@@ -45,30 +42,41 @@ public class Game
 
         for (int i = 0; i < numSites; i++)
         {
-            inputs = Console.ReadLine()!.Split(' ');
-            int siteId = int.Parse(inputs[0]);
-            int ignore1 = int.Parse(inputs[1]); // used in future leagues
-            int ignore2 = int.Parse(inputs[2]); // used in future leagues
-            int structureType = int.Parse(inputs[3]); // -1 = No structure, 1 = TOWER, 2 = Barracks
-            int owner = int.Parse(inputs[4]); // -1 = No structure, 0 = Friendly, 1 = Enemy
-            int param1 = int.Parse(inputs[5]);//When barracks, the number of turns before a new set of creeps can be trained (if 0, then training may be started this turn)
-            int param2 = int.Parse(inputs[6]);//When barracks: the creep type: 0 for KNIGHT, 1 for ARCHER
-
-            var site = GetSite(siteId);
-            site.UpdateSite(structureType, owner.MapToOwner(), param1, param2);
+            ReadSite();
         }
         int numUnits = int.Parse(Console.ReadLine()!);
         for (int i = 0; i < numUnits; i++)
         {
-            inputs = Console.ReadLine()!.Split(' ');
-            int x = int.Parse(inputs[0]);
-            int y = int.Parse(inputs[1]);
-            int owner = int.Parse(inputs[2]); // 0 = Friendly, 1 = Enemy
-            int unitType = int.Parse(inputs[3]); // -1 = QUEEN, 0 = KNIGHT, 1 = ARCHER, 2 = Giant
-            int health = int.Parse(inputs[4]);
-            AddUnitsToField(owner, unitType, health, x, y);
+            ReadUnit();
         }
-        ai = new Ai();
+
+    }
+
+    private void ReadUnit()
+    {
+        string[] inputs = Console.ReadLine()!.Split(' ');
+        int x = int.Parse(inputs[0]);
+        int y = int.Parse(inputs[1]);
+        int owner = int.Parse(inputs[2]); // 0 = Friendly, 1 = Enemy
+        int unitType = int.Parse(inputs[3]); // -1 = QUEEN, 0 = KNIGHT, 1 = ARCHER, 2 = Giant
+        int health = int.Parse(inputs[4]);
+
+        AddUnitsToField(owner, unitType, health, x, y);
+    }
+
+    private void ReadSite()
+    {
+        string[] inputs = Console.ReadLine()!.Split(' ');
+        int siteId = int.Parse(inputs[0]);
+        int ignore1 = int.Parse(inputs[1]); // used in future leagues
+        int ignore2 = int.Parse(inputs[2]); // used in future leagues
+        int structureType = int.Parse(inputs[3]); // -1 = No structure, 1 = TOWER, 2 = Barracks
+        int owner = int.Parse(inputs[4]); // -1 = No structure, 0 = Friendly, 1 = Enemy
+        int param1 = int.Parse(inputs[5]);//When barracks, the number of turns before a new set of creeps can be trained (if 0, then training may be started this turn)
+        int param2 = int.Parse(inputs[6]);//When barracks: the creep type: 0 for KNIGHT, 1 for ARCHER
+
+        var site = GetSite(siteId);
+        site.UpdateSite(structureType, owner.MapToOwner(), param1, param2);
     }
 
     private void AddUnitsToField(int owner, int unitType, int health, int x, int y)
