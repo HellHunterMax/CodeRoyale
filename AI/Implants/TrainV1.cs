@@ -3,6 +3,7 @@ public class TrainV1 : ITrainImplant
     private bool IsKnightTurn = false;
     public string GetTrainCommand(Field field, List<Site> sites, Queen queen)
         {
+            //Save money for big push.
             var command = "TRAIN";
             var site = GetSiteForTraining(field, sites, queen);
 
@@ -25,6 +26,8 @@ public class TrainV1 : ITrainImplant
             var canBuildArcher = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
 
             var AreThereEnoughArchers = GetNumberOfArchers(field) > 1;
+            var numberOfKnights = GetNumberOfKnights(field);
+            
             var gold = IsKnightTurn? 80 : 100;
             UnitType unitType;
 
@@ -70,6 +73,11 @@ public class TrainV1 : ITrainImplant
             queen.Gold -= gold;
             return site;
         }
+
+    private int GetNumberOfKnights(Field field)
+    {
+        throw new NotImplementedException();
+    }
 
     private Barracks? GetBarrack(Site site)
     {

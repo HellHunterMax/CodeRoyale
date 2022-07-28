@@ -3,34 +3,75 @@ public class MovesV1 : IMoveImplant
     public string GetMoveCommand(Field field, List<Site> sites, Queen queen)
     {
         var (closestNonHostileSite, distance) = GetClosestNonHostileSite(field, sites, queen);
-        var areThereAnoughBarracks = CountBarracks(sites) > 1;
+        var areThereEnoughMines = CountMines(sites) >1;
+        var areThereEnoughBarracks = CountBarracks(sites) > 1;
         var areThereEnoughTowers = CountTowers(sites) > 1;
+        var touchedSite = sites.FirstOrDefault(x=> x.SiteId == queen.TouchedSite);
 
-        if  (closestNonHostileSite == null || (areThereEnoughTowers && areThereAnoughBarracks))
+        if  (closestNonHostileSite == null || (areThereEnoughTowers && areThereEnoughBarracks && areThereEnoughMines))
         {
-            var site = sites.FirstOrDefault(x=> x.SiteId == queen.TouchedSite);
-            if( site != null && site.Structure.Type == StructureType.TOWER)
-            {
-                return $"BUILD {queen.TouchedSite} {StructureType.TOWER}";
-            }
+            //TODO if no gold in mine dont go and guild mine there.
             //TODO Run From Enemy!
             //Find Perfect location to hide.
-            return "WAIT";
+            return Commands.Wait();
+        }
+
+        var buildTouchedSiteCommand = GetBuildTouchedSiteCommand(touchedSite);
+
+        if (buildTouchedSiteCommand != null)
+        {
+            return buildTouchedSiteCommand;
         }
 
         if (distance > Queen.Radius)
         {
-            return $"MOVE {closestNonHostileSite.X} {closestNonHostileSite.Y}";
+            return Commands.Move(closestNonHostileSite.X, closestNonHostileSite.Y);
         }
 
-        if (areThereAnoughBarracks )
+        if (!areThereEnoughMines)
         {
-            return $"BUILD {closestNonHostileSite.SiteId} {StructureType.TOWER}";
+            return Commands.Build(closestNonHostileSite.SiteId, StructureType.MINE, null);
         }
 
+        if (!areThereEnoughBarracks )
+        {
+            var barracksType = GetBarracksTypeToBuild(sites);
+            return Commands.Build(closestNonHostileSite.SiteId, StructureType.BARRACKS, barracksType);
+        }
 
-        var barracksType = GetBarracksTypeToBuild(sites);
-        return $"BUILD {closestNonHostileSite.SiteId} {StructureType.BARRACKS}-{barracksType}";
+        if (!areThereEnoughTowers)
+        {
+            return Commands.Build(closestNonHostileSite.SiteId, StructureType.TOWER, null);
+        }
+        
+            return Commands.Wait();
+    }
+
+    private string? GetBuildTouchedSiteCommand(Site? touchedSite)
+    {
+        if (touchedSite != null && touchedSite.Structure.Type == StructureType.MINE)
+        {
+            var mine = (Mine)touchedSite.Structure;
+            if (mine.IncomeRate != touchedSite.MaxMineSize)
+            {
+                return Commands.Build(touchedSite.SiteId, StructureType.MINE, null);
+            }
+        }
+        if (touchedSite != null && touchedSite.Structure.Type == StructureType.TOWER)
+        {
+            var tower = (Tower)touchedSite.Structure;
+            Console.Error.WriteLine($"tower maxRadius == {tower.AttackRadius}");
+            if (tower.AttackRadius <= 500)
+            {
+                return Commands.Build(touchedSite.SiteId, StructureType.TOWER, null);
+            }
+        }
+        return null;
+    }
+
+    private int CountMines(List<Site> sites)
+    {
+        return sites.Count(x => x.Owner == Owner.Friendly && x.Structure.Type == StructureType.MINE);
     }
 
     private int CountTowers(List<Site> sites)
@@ -89,8 +130,8 @@ public class MovesV1 : IMoveImplant
 
     private int GetDistance(Queen queen, Site site)
     {
-        var xDistance = Math.Abs(queen.X - site.X);
-        var yDistance = Math.Abs(queen.Y - site.Y);
-        return (xDistance + yDistance) - site.Radius;
+        var xDistance = Math.Abs(queen.X - site.X) - site.Radius;
+        var yDistance = Math.Abs(queen.Y - site.Y) - site.Radius;
+        return (xDistance + yDistance);
     }
 }
