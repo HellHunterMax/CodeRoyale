@@ -1,4 +1,4 @@
 public interface IBuildableUnit
 {
-    int GoldCost {get;}
+    static int GoldCost {get;}
 }

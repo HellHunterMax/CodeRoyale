@@ -30,8 +30,7 @@ public class Game
 
     private void ResetField()
     {
-        Field.FriendlyArchers.Clear();
-        Field.FriendlyKnights.Clear();
+        Field.Units.Clear();
     }
 
     private void ReadGameLoop(int numSites)
@@ -84,17 +83,26 @@ public class Game
         if(owner != 0)
         return;
 
-        if(unitType == 0)//Knight
+        if(unitType == UnitType.KNIGHT.ToInt())
         {
-            Field.FriendlyKnights.Add(new Knight(owner.ToOwner(), x, y, 100));
+            Field.Units.Add(new Knight(owner.ToOwner(), x, y, health));
         }
-        else if(unitType == 1)//Archer
+        else if(unitType == UnitType.ARCHER.ToInt())
         {
-            Field.FriendlyArchers.Add(new Archer(owner.ToOwner(), x, y, 100));
+            Field.Units.Add(new Archer(owner.ToOwner(), x, y, health));
         }
-        else if(unitType == -1)//Queen
+        else if (unitType == UnitType.GIANT.ToInt())
+        {
+            Field.Units.Add(new Giant(owner.ToOwner(), x, y, health));
+        }
+        else if(owner == Owner.Friendly.ToInt() && unitType == UnitType.QUEEN.ToInt())
         {
             Queen.UpdateQueen(x, y, health);
+            Field.Units.Add(Queen);
+        }
+        else if (owner == Owner.Enemy.ToInt() && unitType == UnitType.QUEEN.ToInt())
+        {
+            Field.Units.Add(new Queen(owner.ToOwner(), x, y, health));
         }
     }
 

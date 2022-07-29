@@ -1,8 +1,8 @@
-public class Mine : Structure
+public class Mine : IStructure
 {
-    public override StructureType Type => StructureType.MINE;
+    public StructureType Type => StructureType.MINE;
     public int IncomeRate { get; set; }
-    public override void Update(int incomeRate, int notUsed)
+    public void Update(int incomeRate, int notUsed)
     {
         IncomeRate = incomeRate;
     }

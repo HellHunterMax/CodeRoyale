@@ -10,9 +10,13 @@ public class MovesV1 : IMoveImplant
 
         if  (closestNonHostileSite == null || (areThereEnoughTowers && areThereEnoughBarracks && areThereEnoughMines))
         {
-            //TODO if no gold in mine dont go and guild mine there.
-            //TODO Run From Enemy!
-            //Find Perfect location to hide.
+            // Check for closest site maxGold if low then build archer
+            // then go to middle build mine max upgrade
+            // go vertical build tower upgrade.
+            // go vertical build mine & upgrade
+            // go vertical build barracks
+            // go Horizontal buildTower
+            // TODO if no gold in mine dont go and guild mine there.
             return Commands.Wait();
         }
 

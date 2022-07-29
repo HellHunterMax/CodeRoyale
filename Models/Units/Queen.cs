@@ -1,5 +1,6 @@
-public class Queen : Unit, IFieldItem
+public class Queen : Unit
 {
+    public override UnitType Type { get; } = UnitType.QUEEN;
     public const int MaxMovement = 60;
     public static int Radius = 30;
     public int Gold { get; set; }

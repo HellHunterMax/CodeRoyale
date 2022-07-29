@@ -1,10 +1,10 @@
-public class Barracks : Structure
+public class Barracks : IStructure
 {
     public UnitType UnitType { get; set; }
     public bool IsTraining { get; set; }
-    public override StructureType Type => StructureType.BARRACKS;
+    public StructureType Type => StructureType.BARRACKS;
 
-    public override void Update(int trainingNumber, int unitType)
+    public void Update(int trainingNumber, int unitType)
     {
         IsTraining = trainingNumber == 0 ? false : true;
         UnitType = unitType.ToUnitType();

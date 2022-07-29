@@ -1,7 +1,7 @@
-public class Empty : Structure
+public class Empty : IStructure
 {
-    public override StructureType Type => StructureType.EMPTY;
-    public override void Update(int param1, int param2)
+    public StructureType Type => StructureType.EMPTY;
+    public void Update(int param1, int param2)
     {
         
     }

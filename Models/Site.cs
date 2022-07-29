@@ -4,7 +4,7 @@ public class Site : IFieldItem
     public Owner Owner { get; set; }
     public int RemainingGold { get; set; }
     public int MaxMineSize { get; set; }
-    public Structure Structure { get; set; }
+    public IStructure Structure { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
     public int Radius { get; set; }

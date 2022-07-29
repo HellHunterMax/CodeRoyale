@@ -1,9 +1,8 @@
 public class TrainV1 : ITrainImplant
 {
-    private bool IsKnightTurn = false;
+    private bool _isKnightTurn = false;
     public string GetTrainCommand(Field field, List<Site> sites, Queen queen)
         {
-            //Save money for big push.
             var command = "TRAIN";
             var site = GetSiteForTraining(field, sites, queen);
 
@@ -17,7 +16,7 @@ public class TrainV1 : ITrainImplant
 
         private Site? GetSiteForTraining(Field field, List<Site> sites, Queen queen)
         {
-            var availableSites = GetAvailableSites(sites);
+            var availableSites = GetAvailableBarracks(sites);
             if (!availableSites.Any())
             {
                 return null;
@@ -25,59 +24,52 @@ public class TrainV1 : ITrainImplant
             var canBuildKnight = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
             var canBuildArcher = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
 
-            var AreThereEnoughArchers = GetNumberOfArchers(field) > 1;
-            var numberOfKnights = GetNumberOfKnights(field);
-            
-            var gold = IsKnightTurn? 80 : 100;
-            UnitType unitType;
+            var numberOfArchers = field.CountUnitsOf(UnitType.ARCHER, Owner.Friendly);
+            var numberOfKnights = field.CountUnitsOf(UnitType.KNIGHT, Owner.Friendly);
+            var areThereEnoughArchers = numberOfArchers > 1;
+            var areThereEnoughKnights = numberOfKnights > 3;
+            var ThereAreKnights = numberOfKnights > 1;
 
-            if (canBuildKnight)
+            var gold = 0;
+            UnitType? unitType = null;
+
+//TODO does not build second knight!
+            if (canBuildKnight && !areThereEnoughKnights && !ThereAreKnights && queen.Gold > Knight.GoldCost * 2)
             {
-                gold = 80;
+                gold = Knight.GoldCost;
                 unitType = UnitType.KNIGHT;
-                if (!IsKnightTurn && !AreThereEnoughArchers)
-                {
-                    if (canBuildArcher)
-                    {
-                        gold = 100;
-                        unitType = UnitType.ARCHER;
-                    }
-                }
             }
-            else if (canBuildArcher)
+            else if (canBuildKnight && !areThereEnoughKnights && ThereAreKnights && queen.Gold > Knight.GoldCost)
             {
-                gold = 100;
+                gold = Knight.GoldCost;
+                unitType = UnitType.KNIGHT;
+            }
+            if (canBuildArcher && !areThereEnoughArchers)
+            {
+                gold = Archer.GoldCost;
                 unitType = UnitType.ARCHER;
             }
-            else
+
+            if (queen.Gold < gold || unitType == null)
             {
                 return null;
             }
 
-            if (queen.Gold < gold)
-            {
-                return null;
-            }
             Site site;
             if (unitType == UnitType.ARCHER)
             {
-                IsKnightTurn = true;
+                _isKnightTurn = true;
                 site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
             }
             else
             {
-                IsKnightTurn = false;
+                _isKnightTurn = false;
                 site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
             }
             GetBarrack(site)!.IsTraining = true;
             queen.Gold -= gold;
             return site;
         }
-
-    private int GetNumberOfKnights(Field field)
-    {
-        throw new NotImplementedException();
-    }
 
     private Barracks? GetBarrack(Site site)
     {
@@ -88,24 +80,19 @@ public class TrainV1 : ITrainImplant
         return (Barracks)site.Structure;
     }
 
-    private int GetNumberOfArchers(Field field)
-        {
-            return field.FriendlyArchers.Count;
-        }
+    private List<Site> GetAvailableBarracks(List<Site> sites)
+    {
+        var availableSites = new List<Site>();
 
-        private List<Site> GetAvailableSites(List<Site> sites)
+        foreach (var site in sites)
         {
-            var availableSites = new List<Site>();
-
-            foreach (var site in sites)
+            if  (site.Owner != Owner.Friendly ||
+                GetBarrack(site)?.IsTraining != false)
             {
-                if  (site.Owner != Owner.Friendly ||
-                    GetBarrack(site)?.IsTraining != false)
-                {
-                    continue;
-                }
-                availableSites.Add(site);
+                continue;
             }
-            return availableSites;
+            availableSites.Add(site);
         }
+        return availableSites;
+    }
 }

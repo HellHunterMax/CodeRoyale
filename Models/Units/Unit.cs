@@ -1,5 +1,6 @@
 public abstract class Unit : IFieldItem
 {
+    public abstract UnitType Type { get; }
     public Owner Owner { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
