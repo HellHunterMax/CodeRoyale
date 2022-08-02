@@ -4,26 +4,27 @@ public class Game
     public List<Site> Sites { get; } = new List<Site>();
     public Queen Queen {get;} = new Queen(Owner.Friendly, 0, 0, 100);
 
-    private readonly Ai _ai;
+    private int _numSites;
 
     public Game()
     {
-        IMoveImplant moveImplant = new MovesV1();
-        ITrainImplant trainImplant = new TrainV1();
-        _ai = new Ai(moveImplant, trainImplant);
+        SetupGame(out _numSites);
+        ReadGameLoop();
     }
 
-    public void Run()
+    public void Run(Ai ai)
     {
-        int numSites;
-        SetupGame(out numSites);
-
+        bool isTurn1 = true;
         // game loop
         while (true)
         {
-            ReadGameLoop(numSites);
-            Console.WriteLine(_ai.GetMoveCommand(Field, Sites, Queen));
-            Console.WriteLine(_ai.GetTrainCommand(Field, Sites, Queen));
+            if (!isTurn1)
+            {
+                ReadGameLoop();
+            }
+            isTurn1 = false;
+            Console.WriteLine(ai.GetMoveCommand(Field, Sites, Queen));
+            Console.WriteLine(ai.GetTrainCommand(Field, Sites, Queen));
             ResetField();
         }
     }
@@ -33,13 +34,13 @@ public class Game
         Field.Units.Clear();
     }
 
-    private void ReadGameLoop(int numSites)
+    private void ReadGameLoop()
     {
         var inputs = Console.ReadLine()!.Split(' ');
         Queen.Gold = int.Parse(inputs[0]);
         Queen.TouchedSite = int.Parse(inputs[1]); // -1 if none
 
-        for (int i = 0; i < numSites; i++)
+        for (int i = 0; i < _numSites; i++)
         {
             ReadSite();
         }
@@ -80,9 +81,6 @@ public class Game
 
     private void AddUnitsToField(int owner, int unitType, int health, int x, int y)
     {
-        if(owner != 0)
-        return;
-
         if(unitType == UnitType.KNIGHT.ToInt())
         {
             Field.Units.Add(new Knight(owner.ToOwner(), x, y, health));

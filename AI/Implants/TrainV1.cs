@@ -22,32 +22,14 @@ public class TrainV1 : ITrainImplant
                 return null;
             }
             var canBuildKnight = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
-            var canBuildArcher = availableSites.Any(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
-
-            var numberOfArchers = field.CountUnitsOf(UnitType.ARCHER, Owner.Friendly);
-            var numberOfKnights = field.CountUnitsOf(UnitType.KNIGHT, Owner.Friendly);
-            var areThereEnoughArchers = numberOfArchers > 1;
-            var areThereEnoughKnights = numberOfKnights > 3;
-            var ThereAreKnights = numberOfKnights > 1;
 
             var gold = 0;
             UnitType? unitType = null;
 
-//TODO does not build second knight!
-            if (canBuildKnight && !areThereEnoughKnights && !ThereAreKnights && queen.Gold > Knight.GoldCost * 2)
+            if (canBuildKnight && queen.Gold > Knight.GoldCost)
             {
                 gold = Knight.GoldCost;
                 unitType = UnitType.KNIGHT;
-            }
-            else if (canBuildKnight && !areThereEnoughKnights && ThereAreKnights && queen.Gold > Knight.GoldCost)
-            {
-                gold = Knight.GoldCost;
-                unitType = UnitType.KNIGHT;
-            }
-            if (canBuildArcher && !areThereEnoughArchers)
-            {
-                gold = Archer.GoldCost;
-                unitType = UnitType.ARCHER;
             }
 
             if (queen.Gold < gold || unitType == null)
@@ -56,16 +38,8 @@ public class TrainV1 : ITrainImplant
             }
 
             Site site;
-            if (unitType == UnitType.ARCHER)
-            {
-                _isKnightTurn = true;
-                site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.ARCHER);
-            }
-            else
-            {
-                _isKnightTurn = false;
-                site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
-            }
+
+            site = availableSites.First(x => GetBarrack(x)?.UnitType == UnitType.KNIGHT);
             GetBarrack(site)!.IsTraining = true;
             queen.Gold -= gold;
             return site;
