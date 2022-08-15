@@ -65,23 +65,26 @@ public class MovesV2 : IMoveImplant
 
         var SiteDistances = GetSitesAndDistance(sites, queen);
 
-        var (closestNonHostileSite, distance) = GetClosestNonHostileSite(field, sites, queen);
+        var (closestNonHostileSite, closestSiteDistance) = GetClosestNonHostileSite(field, sites, queen);
         var areThereEnoughMines = _MyMines > 3;
         var areThereEnoughBarracks = _MyBarracks > 0;
         var areThereEnoughTowers = _MyTowers > 1;
         var touchedSite = sites.FirstOrDefault(x=> x.SiteId == queen.TouchedSite);
 
-            // Check for closest site maxGold if low then build archer
-            // then go to middle build mine max upgrade
-            // go vertical build tower upgrade.
-            // go vertical build mine & upgrade
-            // go vertical build barracks
-            // go Horizontal buildTower
-            // TODO if no gold in mine dont go and guild mine there.
         if  (field.CountUnitsOf(UnitType.KNIGHT, Owner.Enemy) > 0)
         {
-            Console.Error.WriteLine($"Found Enemy units!"); //Build Towers and Run!
             _IsInitialSetup = false;
+            Console.Error.WriteLine($"Found Enemy units Run!"); //Build Towers and Run!
+            var (unit, closestUnitDistance) = GetClosestEnemyKnight(field, sites, queen);
+
+            if (closestUnitDistance < 200)
+            {
+                if (_MyTowers > 0)
+                {
+                    (Site? closestTower, int towerDistance) = StructureType.TOWER.FindClosest(sites, Owner.Friendly, queen);
+                    return Commands.Run(closestTower!, unit!, queen);
+                }
+            }
         }
 
         Console.Error.WriteLine($"_IsInitialSetup= {_IsInitialSetup}.");
@@ -113,6 +116,7 @@ public class MovesV2 : IMoveImplant
         }
         else
         {
+            
             if (_BarracksSite.Structure.Type != StructureType.BARRACKS)
             {
                 return Commands.Build(_BarracksSite.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
@@ -131,6 +135,8 @@ public class MovesV2 : IMoveImplant
             }
             if (!areThereEnoughMines)
             {
+                
+                // TODO if no gold in mine dont go and guild mine there. Or enemies
                 if (closestNonHostileSite.RemainingGold > 20)
                 {
                     return Commands.Build(closestNonHostileSite.SiteId, StructureType.MINE, null);
@@ -142,6 +148,26 @@ public class MovesV2 : IMoveImplant
             }
         }
             return Commands.Wait();
+    }
+
+    private (Knight? unit, int closestUnitDistance) GetClosestEnemyKnight(Field field, List<Site> sites, Queen queen)
+    {
+        Knight closest = null;
+        int distance = int.MaxValue;
+        foreach(var unit in field.Units)
+        {
+            if (unit.Type != UnitType.KNIGHT || unit.Owner != Owner.Enemy)
+            {
+                continue;
+            }
+            var unitDistance = GetDistance(queen, unit);
+            if (distance > unitDistance)
+            {
+                distance = unitDistance;
+                closest = (Knight)unit;
+            }
+        }
+        return (closest, distance);
     }
 
     private IOrderedEnumerable<KeyValuePair<Site, int>> GetSitesAndDistance(List<Site> sites, Queen queen)
@@ -210,10 +236,17 @@ public class MovesV2 : IMoveImplant
         return (closestSite, closestDistance);
     }
 
-    private int GetDistance(Queen queen, Site site)
+    private int GetDistance(Queen queen, IFieldItem fieldItem)
     {
-        var xDistance = Math.Abs(queen.X - site.X) - site.Radius;
-        var yDistance = Math.Abs(queen.Y - site.Y) - site.Radius;
+        var xDistance = Math.Abs(queen.X - fieldItem.X) - (fieldItem.Radius + queen.Radius);
+        var yDistance = Math.Abs(queen.Y - fieldItem.Y) - (fieldItem.Radius + queen.Radius);
         return (xDistance + yDistance);
     }
 }
+
+// Check for closest site maxGold if low then build archer
+// then go to middle build mine max upgrade
+// go vertical build tower upgrade.
+// go vertical build mine & upgrade
+// go vertical build barracks
+// go Horizontal buildTower

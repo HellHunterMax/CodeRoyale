@@ -4,7 +4,7 @@ public abstract class Unit : IFieldItem
     public Owner Owner { get; set; }
     public int X { get; set; }
     public int Y { get; set; }
-
+    public int Radius {get; set; } = 0;
     public int HP { get; set; }
 
     public Unit(Owner owner, int x, int y, int hp)
