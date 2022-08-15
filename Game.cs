@@ -3,6 +3,7 @@ public class Game
     public Field Field { get; } = new Field();
     public List<Site> Sites { get; } = new List<Site>();
     public Queen Queen {get;} = new Queen(Owner.Friendly, 0, 0, 100);
+    public bool IsTurn1 = true;
 
     private int _numSites;
 
@@ -12,29 +13,12 @@ public class Game
         ReadGameLoop();
     }
 
-    public void Run(Ai ai)
-    {
-        bool isTurn1 = true;
-        // game loop
-        while (true)
-        {
-            if (!isTurn1)
-            {
-                ReadGameLoop();
-            }
-            isTurn1 = false;
-            Console.WriteLine(ai.GetMoveCommand(Field, Sites, Queen));
-            Console.WriteLine(ai.GetTrainCommand(Field, Sites, Queen));
-            ResetField();
-        }
-    }
-
-    private void ResetField()
+    public void ResetField()
     {
         Field.Units.Clear();
     }
 
-    private void ReadGameLoop()
+    public void ReadGameLoop()
     {
         var inputs = Console.ReadLine()!.Split(' ');
         Queen.Gold = int.Parse(inputs[0]);

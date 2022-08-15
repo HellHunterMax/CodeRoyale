@@ -8,6 +8,16 @@ class Player
         ITrainImplant trainImplant = new TrainV1();
         var ai = new Ai(moveImplant, trainImplant);
 
-        game.Run(ai);
+        while (true)
+        {
+            if (!game.IsTurn1)
+            {
+                game.ReadGameLoop();
+            }
+            game.IsTurn1 = false;
+            Console.WriteLine(ai.GetMoveCommand(game.Field, game.Sites, game.Queen));
+            Console.WriteLine(ai.GetTrainCommand(game.Field, game.Sites, game.Queen));
+            game.ResetField();
+        }
     }
 }

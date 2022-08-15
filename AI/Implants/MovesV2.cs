@@ -8,7 +8,7 @@ public class MovesV2 : IMoveImplant
 
     public MovesV2(Field field, List<Site> sites, Queen queen)
     {
-        var SiteDistances = GetSitesAndDistance(sites, queen);
+        IOrderedEnumerable<KeyValuePair<Site, int>> SiteDistances = GetSitesAndDistance(sites, queen);
         var isMySideLeft = queen.X < Field.MaxWidth/2 ? true : false;
         _BarracksSite = GetBestBarrackPlace(SiteDistances, isMySideLeft);
     }
