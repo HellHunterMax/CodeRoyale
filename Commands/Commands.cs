@@ -9,9 +9,9 @@ public static class Commands
         return $"BUILD {site} {structureType}";
     }
 
-    public static string Run(Site closestTower,Knight unit,Queen queen)
+    public static string Run(Site site, IFieldItem fieldItem)
     {
-        Point point = GetOtherSideOfSite(closestTower, new Point {X = unit.X, Y = unit.Y});
+        Point point = GetOtherSideOfSite(site, new Point {X = fieldItem.X, Y = fieldItem.Y});
         return Commands.Move(point.X, point.Y);
     }
 
@@ -34,8 +34,8 @@ public static class Commands
         Console.Error.WriteLine($"vx = {vx}, vy = {vy}.");
         double length = Math.Sqrt(vx*vx + vy*vy);
         Console.Error.WriteLine($"length = {length}.");
-        C.X = (int)Math.Round(vx / length * (site.Radius + 30) + site.X);
-        C.Y = (int)Math.Round(vy / length * (site.Radius + 30) + site.Y);
+        C.X = (int)Math.Round(vx / length * (site.Radius + 60) + site.X);
+        C.Y = (int)Math.Round(vy / length * (site.Radius + 60) + site.Y);
         
         Console.Error.WriteLine($"C.X = {C.X}, C.Y = {C.Y}.");
         Console.Error.WriteLine($"Finished getting other side of Site: {site.SiteId}:");

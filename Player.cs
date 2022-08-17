@@ -4,7 +4,7 @@ class Player
     {
         var game = new Game();
         
-        IMoveImplant moveImplant = new MovesV2(game.Field, game.Sites, game.Queen);
+        IQueenImplant moveImplant = new QueenImplantV2(game.Field, game.Sites, game.Queen);
         ITrainImplant trainImplant = new TrainV1();
         var ai = new Ai(moveImplant, trainImplant);
 

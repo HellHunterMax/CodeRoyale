@@ -1,4 +1,4 @@
-public interface IMoveImplant
+public interface IQueenImplant
 {
-    string GetMoveCommand(Field field, List<Site> sites, Queen queen);
+    string GetQueenCommand(Field field, List<Site> sites, Queen queen);
 }
