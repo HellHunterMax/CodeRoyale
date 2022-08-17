@@ -1,56 +1,40 @@
 public class MovesV2 : IMoveImplant
 {
+    //TODO dont go into enemy Towers if there are no knights in range.
     private bool _IsInitialSetup = true;
     private int _MyMines = 0;
     private int _MyBarracks = 0;
     private int _MyTowers = 0;
     private Site _BarracksSite;
+    private Site[] _TowerLocations;
+    private readonly int[] _MySide;
 
     public MovesV2(Field field, List<Site> sites, Queen queen)
     {
         IOrderedEnumerable<KeyValuePair<Site, int>> SiteDistances = GetSitesAndDistance(sites, queen);
         var isMySideLeft = queen.X < Field.MaxWidth/2 ? true : false;
-        _BarracksSite = GetBestBarrackPlace(SiteDistances, isMySideLeft);
+        _MySide = isMySideLeft ? new[] {0, 1920/2} : new[] {1920/2, 1920};
+        _TowerLocations = GetTowerLocations(sites, isMySideLeft);
+        _BarracksSite = GetBestBarrackPlace(SiteDistances);
     }
 
-    private Site GetBestBarrackPlace(IOrderedEnumerable<KeyValuePair<Site, int>> siteDistances, bool isMySideLeft)
+    private Site GetBestBarrackPlace(IOrderedEnumerable<KeyValuePair<Site, int>> siteDistances)
     {
-        var middle = Field.MaxWidth / 2;
         Site? bestSite = null;
-        if (isMySideLeft)
+        foreach (var site in siteDistances)
         {
-            foreach (var site in siteDistances)
+            if (!IsFieldItemOnMySide(site.Key) || site.Key == _TowerLocations[0] || site.Key == _TowerLocations[1])
             {
-                if (site.Key.X < middle)
-                {
-                    if (bestSite == null)
-                    {
-                        bestSite = site.Key;
-                        continue;
-                    }
-                    if (bestSite.MaxMineSize > site.Key.MaxMineSize && bestSite.RemainingGold > site.Key.RemainingGold)
-                    {
-                        bestSite = site.Key;
-                    }
-                }
+                continue;
             }
-        }
-        else
-        {
-            foreach (var site in siteDistances)
+            if (bestSite == null)
             {
-                if (site.Key.X > middle)
-                {
-                    if (bestSite == null)
-                    {
-                        bestSite = site.Key;
-                        continue;
-                    }
-                    if (bestSite.MaxMineSize > site.Key.MaxMineSize && bestSite.RemainingGold > site.Key.RemainingGold)
-                    {
-                        bestSite = site.Key;
-                    }
-                }
+                bestSite = site.Key;
+                continue;
+            }
+            if (bestSite.MaxMineSize > site.Key.MaxMineSize && bestSite.RemainingGold > site.Key.RemainingGold)
+            {
+                bestSite = site.Key;
             }
         }
         Console.Error.WriteLine($"Best Barracks Site is: {bestSite!.SiteId}");
@@ -62,13 +46,14 @@ public class MovesV2 : IMoveImplant
         _MyMines = CountMines(sites);
         _MyBarracks = CountBarracks(sites);
         _MyTowers = CountTowers(sites);
+        
+        var areThereEnoughMines = _MyMines > 5;
+        var areThereEnoughBarracks = _MyBarracks > 0;
+        var areThereEnoughTowers = _MyTowers > 1;
 
         var SiteDistances = GetSitesAndDistance(sites, queen);
 
         var (closestNonHostileSite, closestSiteDistance) = GetClosestNonHostileSite(field, sites, queen);
-        var areThereEnoughMines = _MyMines > 3;
-        var areThereEnoughBarracks = _MyBarracks > 0;
-        var areThereEnoughTowers = _MyTowers > 1;
         var touchedSite = sites.FirstOrDefault(x=> x.SiteId == queen.TouchedSite);
 
         if  (field.CountUnitsOf(UnitType.KNIGHT, Owner.Enemy) > 0)
@@ -77,9 +62,9 @@ public class MovesV2 : IMoveImplant
             Console.Error.WriteLine($"Found Enemy units Run!"); //Build Towers and Run!
             var (unit, closestUnitDistance) = GetClosestEnemyKnight(field, sites, queen);
 
-            if (closestUnitDistance < 200)
+            if (closestUnitDistance < 300)
             {
-                if (_MyTowers > 0)
+                if (_MyTowers > 1)
                 {
                     (Site? closestTower, int towerDistance) = StructureType.TOWER.FindClosest(sites, Owner.Friendly, queen);
                     return Commands.Run(closestTower!, unit!, queen);
@@ -131,7 +116,7 @@ public class MovesV2 : IMoveImplant
             }
             if (!areThereEnoughTowers)
             {
-                return Commands.Build(closestNonHostileSite.SiteId, StructureType.TOWER, null);
+                return GetBuildTowerCommand(queen);
             }
             if (!areThereEnoughMines)
             {
@@ -148,6 +133,112 @@ public class MovesV2 : IMoveImplant
             }
         }
             return Commands.Wait();
+    }
+
+    private string GetBuildTowerCommand(Queen queen)
+    {
+        Site site = null;
+        if (_TowerLocations[0].Structure.Type != StructureType.TOWER)
+        {
+            if (_TowerLocations[1].Structure.Type == StructureType.TOWER)
+            {
+                site = _TowerLocations[0];
+            }
+            else
+            {
+                var distance0 = GetDistance(_TowerLocations[0], queen);
+                var distance1 = GetDistance(_TowerLocations[1], queen);
+                site = distance0 < distance1 ? _TowerLocations[0] : _TowerLocations[1];
+            }
+        }
+        else if (_TowerLocations[1].Structure.Type != StructureType.TOWER)
+        {
+            site = _TowerLocations[1];
+        }
+        return Commands.Build(site!.SiteId, StructureType.TOWER);
+    }
+
+    private Site[] GetTowerLocations(List<Site> sites, bool isMySideLeft)
+    {
+        Site[]? bestSiteDuo = null;
+        List<Site[]> towerDuos = GetTowerDuos(sites,  isMySideLeft);
+
+        foreach (var duo in towerDuos)
+        {
+            if (bestSiteDuo == null)
+            {
+                bestSiteDuo = duo;
+                continue;
+            }
+            var bestSiteDuoMaxMineSize = bestSiteDuo[0].MaxMineSize + bestSiteDuo[1].MaxMineSize;
+            var bestSiteDuoRemainingGold = bestSiteDuo[0].RemainingGold + bestSiteDuo[1].RemainingGold;
+            var duoMaxMineSize = duo[0].MaxMineSize + duo[1].MaxMineSize;
+            var duoRemainingGold = duo[0].RemainingGold + duo[1].RemainingGold;
+            
+            if (duoMaxMineSize > bestSiteDuoMaxMineSize && duoRemainingGold > bestSiteDuoRemainingGold)
+            {
+                bestSiteDuo = duo;
+            }
+        }
+        if (bestSiteDuo == null)
+        {
+            throw new Exception("No SiteDuos found");
+        }
+        return bestSiteDuo;
+    }
+
+    private List<Site[]> GetTowerDuos(List<Site> sites, bool isMySideLeft)
+    {
+        int maxTowerRange = 500;
+        var middle = Field.MaxWidth / 2;
+        List<Site[]> siteDuos = new List<Site[]>();
+        foreach (var siteA in sites)
+        {
+            if (!IsFieldItemOnMySide(siteA) || siteA.Equals(_MyBarracks))
+            {
+                continue;
+            }
+            foreach (var siteB in sites)
+            {
+                if (siteA.Equals(siteB) ||
+                    !IsFieldItemOnMySide(siteB) || 
+                    GetDistance(siteA, siteB) > maxTowerRange)
+                {
+                    continue;
+                }
+                Site[] siteDuo = new Site[] {siteA, siteB};
+                if (siteDuos.Any(s => IsSiteDuo(s, siteA, siteB)))
+                {
+                    continue;
+                }
+                siteDuos.Add(siteDuo);
+            }
+        }
+        return siteDuos;
+    }
+
+    private bool IsFieldItemOnMySide(Site siteA)
+    {
+        return siteA.X > _MySide[0] && siteA.X < _MySide[1];
+    }
+
+    private static bool IsSiteDuo(Site[] siteDuo, Site siteA, Site siteB)
+    {
+        if (siteDuo[0] == siteA)
+        {
+            if (siteDuo[1] == siteB)
+            {
+                return true;
+            }
+        }
+        else if (siteDuo[1] == siteA)
+        {
+            if (siteDuo[0] == siteB)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private (Knight? unit, int closestUnitDistance) GetClosestEnemyKnight(Field field, List<Site> sites, Queen queen)
@@ -236,10 +327,10 @@ public class MovesV2 : IMoveImplant
         return (closestSite, closestDistance);
     }
 
-    private int GetDistance(Queen queen, IFieldItem fieldItem)
+    private int GetDistance(IFieldItem fieldItemA, IFieldItem fieldItemB)
     {
-        var xDistance = Math.Abs(queen.X - fieldItem.X) - (fieldItem.Radius + queen.Radius);
-        var yDistance = Math.Abs(queen.Y - fieldItem.Y) - (fieldItem.Radius + queen.Radius);
+        var xDistance = Math.Abs(fieldItemA.X - fieldItemB.X) - (fieldItemB.Radius + fieldItemA.Radius);
+        var yDistance = Math.Abs(fieldItemA.Y - fieldItemB.Y) - (fieldItemB.Radius + fieldItemA.Radius);
         return (xDistance + yDistance);
     }
 }

@@ -1,6 +1,6 @@
 public static class Commands
 {
-    public static string Build(int site, StructureType structureType, UnitType? barracksUnitType)
+    public static string Build(int site, StructureType structureType, UnitType? barracksUnitType = null)
     {
         if (structureType == StructureType.BARRACKS)
         {
@@ -34,8 +34,8 @@ public static class Commands
         Console.Error.WriteLine($"vx = {vx}, vy = {vy}.");
         double length = Math.Sqrt(vx*vx + vy*vy);
         Console.Error.WriteLine($"length = {length}.");
-        C.X = (int)Math.Round(vx / length * site.Radius + site.X);
-        C.Y = (int)Math.Round(vy / length * site.Radius + site.Y);
+        C.X = (int)Math.Round(vx / length * (site.Radius + 30) + site.X);
+        C.Y = (int)Math.Round(vy / length * (site.Radius + 30) + site.Y);
         
         Console.Error.WriteLine($"C.X = {C.X}, C.Y = {C.Y}.");
         Console.Error.WriteLine($"Finished getting other side of Site: {site.SiteId}:");
