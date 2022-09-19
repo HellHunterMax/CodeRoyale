@@ -2,11 +2,16 @@ public class QueenImplantV2 : IQueenImplant
 {
     //TODO dont go into enemy Towers if there are no knights in range.
     //TODO build more Towers when one of Towerlocations is taken or there  is nearby empty site.
+    //TODO fix bug when on Enemy Building
+    //TODO Run away sooner
+    //TODO Upgrade towers to fullest, start with building the one closest to the frontline
+    //TODO REFACTOR TO STATES!
     private bool _IsInitialSetup = true;
+    private bool _IsBarracksBuilt = false;
     private int _MyMines = 0;
     private int _MyBarracks = 0;
     private int _MyTowers = 0;
-    private Site _BarracksSite;
+    private List<Site> _BarracksSites;
     private Site[] _TowerLocations;
     private readonly int[] _MySide;
 
@@ -16,30 +21,31 @@ public class QueenImplantV2 : IQueenImplant
         var isMySideLeft = queen.X < Field.MaxWidth/2 ? true : false;
         _MySide = isMySideLeft ? new[] {0, 1920/2} : new[] {1920/2, 1920};
         _TowerLocations = GetTowerLocations(sites, isMySideLeft);
-        _BarracksSite = GetBestBarrackPlace(SiteDistances);
+        _BarracksSites = GetBestBarracksSites(SiteDistances);
+
+    Console.Error.WriteLine($"GoodBarracks Places: ");
+        foreach (var item in _BarracksSites)
+        {
+            Console.Error.Write($"{item.SiteId}, ");
+        }
+        Console.Error.WriteLine();
     }
 
-    private Site GetBestBarrackPlace(IOrderedEnumerable<KeyValuePair<Site, int>> siteDistances)
+    private List<Site> GetBestBarracksSites(IOrderedEnumerable<KeyValuePair<Site, int>> siteDistances)
     {
-        Site? bestSite = null;
+        List<Site> bestSites = new List<Site>();
         foreach (var site in siteDistances)
         {
             if (!IsFieldItemOnMySide(site.Key) || site.Key == _TowerLocations[0] || site.Key == _TowerLocations[1])
             {
                 continue;
             }
-            if (bestSite == null)
+            if (site.Key.MaxMineSize < 2)
             {
-                bestSite = site.Key;
-                continue;
-            }
-            if (bestSite.MaxMineSize > site.Key.MaxMineSize && bestSite.RemainingGold > site.Key.RemainingGold)
-            {
-                bestSite = site.Key;
+                bestSites.Add(site.Key);
             }
         }
-        Console.Error.WriteLine($"Best Barracks Site is: {bestSite!.SiteId}");
-        return bestSite;
+        return bestSites;
     }
 
     public string GetQueenCommand(Field field, List<Site> sites, Queen queen)
@@ -47,6 +53,7 @@ public class QueenImplantV2 : IQueenImplant
         _MyMines = CountMines(sites);
         _MyBarracks = CountBarracks(sites);
         _MyTowers = CountTowers(sites);
+        _IsBarracksBuilt = _BarracksSites.Any(s => s.Structure.Type == StructureType.BARRACKS);
         
         var areThereEnoughMines = _MyMines > 5;
         var areThereEnoughBarracks = _MyBarracks > 0;
@@ -59,6 +66,12 @@ public class QueenImplantV2 : IQueenImplant
 
         if (_IsInitialSetup && IsEnemyTraining(sites))
         {
+            if (!_IsBarracksBuilt)
+            {
+                var closestBarracksSite = SiteDistances.First(x => _BarracksSites.Any(s => s.SiteId ==x.Key.SiteId)).Key;
+                Console.Error.WriteLine($"Building Barracks on Site {closestBarracksSite.SiteId}!");
+                return Commands.Build(closestBarracksSite.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
+            }
             if (touchedSite != null)
             {
                 var command = GetBuildTouchedSiteCommand(touchedSite);
@@ -78,14 +91,15 @@ public class QueenImplantV2 : IQueenImplant
             }
         }
 
-        if  (field.CountUnitsOf(UnitType.KNIGHT, Owner.Enemy) > 0)
+        if (field.CountUnitsOf(UnitType.KNIGHT, Owner.Enemy) > 0)
         {
             _IsInitialSetup = false;
             Console.Error.WriteLine($"Found Enemy units!");
-            if (_BarracksSite.Structure.Type != StructureType.BARRACKS)
+            if (!_IsBarracksBuilt)
             {
-                Console.Error.WriteLine($"Building Barracks on Site {_BarracksSite.SiteId}!");
-                return Commands.Build(_BarracksSite.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
+                var closestBarracksSite = SiteDistances.First(x => _BarracksSites.Any(s => s.SiteId ==x.Key.SiteId)).Key;
+                Console.Error.WriteLine($"Building Barracks on Site {closestBarracksSite.SiteId}!");
+                return Commands.Build(closestBarracksSite.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
             }
             if (touchedSite != null)
             {
@@ -135,9 +149,10 @@ public class QueenImplantV2 : IQueenImplant
                     return command;
                 }
             }
-            if (closestNonHostileSite == _BarracksSite)
+            Console.Error.WriteLine($"!_IsBarracksBuilt = {!_IsBarracksBuilt}, _BarracksSites.Any(s => s == closestNonHostileSite) = {_BarracksSites.Any(s => s == closestNonHostileSite)}.");
+            if (!_IsBarracksBuilt && _BarracksSites.Any(s => s == closestNonHostileSite))
             {
-                return Commands.Build(closestNonHostileSite.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
+                return Commands.Build(closestNonHostileSite!.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
             }
             if (closestNonHostileSite != null)
             {
@@ -153,6 +168,12 @@ public class QueenImplantV2 : IQueenImplant
         }
         else
         {
+            if (!_IsBarracksBuilt)
+            {
+                var closestBarracksSite = SiteDistances.First(x => _BarracksSites.Any(s => s.SiteId ==x.Key.SiteId)).Key;
+                Console.Error.WriteLine($"Building Barracks on Site {closestBarracksSite.SiteId}!");
+                return Commands.Build(closestBarracksSite.SiteId, StructureType.BARRACKS, UnitType.KNIGHT);
+            }
             if (touchedSite != null)
             {
                 var command = GetBuildTouchedSiteCommand(touchedSite);
