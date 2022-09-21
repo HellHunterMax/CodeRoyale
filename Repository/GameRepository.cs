@@ -12,4 +12,9 @@ public class GameRepository
         return _game.Sites.FirstOrDefault(func);
     }
 
+    public Site? GetSite(int id)
+    {
+        return _game.Sites.FirstOrDefault(x=> x.SiteId == id);
+    }
+
 }

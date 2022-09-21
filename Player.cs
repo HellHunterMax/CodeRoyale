@@ -3,10 +3,10 @@ class Player
     static void Main(string[] args)
     {
         var game = new Game();
+        var tactics = new Tactics(game);
         
-        IQueenImplant moveImplant = new QueenImplantV2(game.Field, game.Sites, game.Queen);
         ITrainImplant trainImplant = new TrainV1();
-        var ai = new Ai(moveImplant, trainImplant);
+        var ai = new Ai(trainImplant, tactics, new GameStatesFactory());
 
         while (true)
         {
@@ -15,7 +15,7 @@ class Player
                 game.ReadGameLoop();
             }
             game.IsTurn1 = false;
-            Console.WriteLine(ai.GetMoveCommand(game.Field, game.Sites, game.Queen));
+            Console.WriteLine(ai.GetMoveCommand(game));
             Console.WriteLine(ai.GetTrainCommand(game.Field, game.Sites, game.Queen));
             game.ResetField();
         }

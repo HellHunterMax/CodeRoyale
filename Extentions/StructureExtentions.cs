@@ -1,4 +1,4 @@
-public static class FindClosestExtention
+public static class StructureExtentions
 {
     public static (Site?, int) FindClosest(this StructureType type, List<Site> sites, Owner owner, Queen queen)
     {
@@ -18,5 +18,10 @@ public static class FindClosestExtention
             }
         }
         return (closestSite, distance);
+    }
+
+    public static Site? GetSite(this List<Site> sites, int id)
+    {
+        return sites.FirstOrDefault(x=> x.SiteId == id);
     }
 }
